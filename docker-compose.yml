@@ -1,0 +1,49 @@
+version: "3.8"
+
+services:
+
+  app:
+    build:
+      context: ./docker/php
+    container_name: askflow_app
+    working_dir: /var/www
+    volumes:
+      - ./backend:/var/www
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:alpine
+    container_name: askflow_nginx
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0
+    container_name: askflow_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: askflow
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+
+  node:
+    container_name: askflow_node
+    image: node:20
+    working_dir: /var/www/backend
+    volumes:
+      - ./backend:/var/www/backend
+    tty: true
+    ports:
+      - "5173:5173"
+
+volumes:
+  dbdata:
