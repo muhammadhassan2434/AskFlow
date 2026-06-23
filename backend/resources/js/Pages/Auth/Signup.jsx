@@ -1,6 +1,22 @@
 import React from 'react';
+import { useForm } from '@inertiajs/react';
 
 export default function Signup() {
+    const { data, setData, post, processing, errors, reset } = useForm({
+        name: '',
+        email: '',
+        password: '',
+        password_confirmation: '',
+    });
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+
+        post('/signup', {
+            onFinish: () => reset('password', 'password_confirmation'),
+        });
+    };
+
     return (
         <main className="auth-page">
             <section className="auth-shell" aria-label="AskFlow signup">
@@ -33,7 +49,7 @@ export default function Signup() {
                             Use your name, email, and password to set up access.
                         </p>
 
-                        <form className="auth-form">
+                        <form className="auth-form" onSubmit={handleSubmit}>
                             <div className="auth-field">
                                 <label htmlFor="name">Name</label>
                                 <input
@@ -43,7 +59,10 @@ export default function Signup() {
                                     autoComplete="name"
                                     placeholder="Your full name"
                                     className="auth-input"
+                                    value={data.name}
+                                    onChange={(event) => setData('name', event.target.value)}
                                 />
+                                {errors.name && <p className="auth-error">{errors.name}</p>}
                             </div>
 
                             <div className="auth-field">
@@ -55,7 +74,10 @@ export default function Signup() {
                                     autoComplete="email"
                                     placeholder="you@example.com"
                                     className="auth-input"
+                                    value={data.email}
+                                    onChange={(event) => setData('email', event.target.value)}
                                 />
+                                {errors.email && <p className="auth-error">{errors.email}</p>}
                             </div>
 
                             <div className="auth-field">
@@ -67,7 +89,10 @@ export default function Signup() {
                                     autoComplete="new-password"
                                     placeholder="Create a password"
                                     className="auth-input"
+                                    value={data.password}
+                                    onChange={(event) => setData('password', event.target.value)}
                                 />
+                                {errors.password && <p className="auth-error">{errors.password}</p>}
                             </div>
 
                             <div className="auth-field">
@@ -79,11 +104,16 @@ export default function Signup() {
                                     autoComplete="new-password"
                                     placeholder="Confirm your password"
                                     className="auth-input"
+                                    value={data.password_confirmation}
+                                    onChange={(event) => setData('password_confirmation', event.target.value)}
                                 />
+                                {errors.password_confirmation && (
+                                    <p className="auth-error">{errors.password_confirmation}</p>
+                                )}
                             </div>
 
-                            <button type="button" className="auth-submit">
-                                Sign up
+                            <button type="submit" className="auth-submit" disabled={processing}>
+                                {processing ? 'Creating account...' : 'Sign up'}
                             </button>
                         </form>
 

@@ -1,6 +1,20 @@
 import React from 'react';
+import { useForm } from '@inertiajs/react';
 
 export default function Login() {
+    const { data, setData, post, processing, errors, reset } = useForm({
+        email: '',
+        password: '',
+    });
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+
+        post('/login', {
+            onFinish: () => reset('password'),
+        });
+    };
+
     return (
         <main className="auth-page">
             <section className="auth-shell" aria-label="AskFlow login">
@@ -33,7 +47,7 @@ export default function Login() {
                             Enter your email and password to continue.
                         </p>
 
-                        <form className="auth-form">
+                        <form className="auth-form" onSubmit={handleSubmit}>
                             <div className="auth-field">
                                 <label htmlFor="email">Email address</label>
                                 <input
@@ -43,7 +57,10 @@ export default function Login() {
                                     autoComplete="email"
                                     placeholder="you@example.com"
                                     className="auth-input"
+                                    value={data.email}
+                                    onChange={(event) => setData('email', event.target.value)}
                                 />
+                                {errors.email && <p className="auth-error">{errors.email}</p>}
                             </div>
 
                             <div className="auth-field">
@@ -55,11 +72,14 @@ export default function Login() {
                                     autoComplete="current-password"
                                     placeholder="Enter your password"
                                     className="auth-input"
+                                    value={data.password}
+                                    onChange={(event) => setData('password', event.target.value)}
                                 />
+                                {errors.password && <p className="auth-error">{errors.password}</p>}
                             </div>
 
-                            <button type="button" className="auth-submit">
-                                Login
+                            <button type="submit" className="auth-submit" disabled={processing}>
+                                {processing ? 'Logging in...' : 'Login'}
                             </button>
                         </form>
 
