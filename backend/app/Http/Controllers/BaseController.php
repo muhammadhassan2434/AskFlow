@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -15,5 +16,15 @@ class BaseController extends Controller
         $pageName = trim($this->pageRoot . '/' . ltrim($page, '/'), '/');
 
         return Inertia::render($pageName, $props);
+    }
+    protected function redirectResponse(
+        string $route,
+        string $type,   // success | error | warning | info
+        string $message
+    ): RedirectResponse {
+        return redirect($route)->with('flash', [
+            'type' => $type,
+            'message' => $message,
+        ]);
     }
 }

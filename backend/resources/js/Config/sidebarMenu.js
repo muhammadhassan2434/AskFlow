@@ -1,38 +1,22 @@
+import { route } from 'ziggy-js';
+
 export const sidebarMenu = [
     {
         label: 'Dashboard',
-        href: '/',
+        href: route('dashboard'),
         key: 'dashboard',
         badge: null,
     },
     {
         label: 'Workspaces',
-        href: '/workspaces',
+        href: route('workspaces.index'),
         key: 'workspaces',
         badge: null,
     },
     {
-        label: 'Questions',
-        href: '/questions',
-        key: 'questions',
-        badge: 'Soon',
-    },
-    {
-        label: 'Users',
-        href: '/users',
-        key: 'users',
-        badge: null,
-    },
-    {
-        label: 'Reports',
-        href: '/reports',
-        key: 'reports',
-        badge: null,
-    },
-    {
-        label: 'Settings',
-        href: '/settings',
-        key: 'settings',
+        label: 'Bots',
+        href: route('bots.index'),
+        key: 'bots',
         badge: null,
     },
 ];

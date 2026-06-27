@@ -1,14 +1,20 @@
 import React from 'react';
-import { router } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import DashboardLayout from '../../Layouts/DashboardLayout';
 
 export default function Index({ workspaces }) {
     const deleteWorkspace = (workspace) => {
-        if (! window.confirm(`Delete ${workspace.name}?`)) {
+        if (
+            !window.confirm(
+                `Are you sure you want to delete "${workspace.name}"?`
+            )
+        ) {
             return;
         }
 
-        router.delete(`/workspaces/${workspace.id}`);
+        router.delete(`/workspaces/${workspace.id}`, {
+            preserveScroll: true,
+        });
     };
 
     return (
@@ -21,13 +27,16 @@ export default function Index({ workspaces }) {
                     <p className="panel-card__eyebrow">Workspace</p>
                     <h2>All workspaces</h2>
                 </div>
-                <a href="/workspaces/create" className="panel-button panel-button--primary workspace-button-link">
+                <Link
+                    href="/workspaces/create"
+                    className="panel-button panel-button--primary workspace-button-link"
+                >
                     Create Workspace
-                </a>
+                </Link>
             </section>
 
             <section className="workspace-table-card">
-                {workspaces.length === 0 ? (
+                {workspaces?.length === 0 ? (
                     <div className="workspace-empty">
                         <h3>No workspaces yet</h3>
                         <p>Create your first workspace to organize questions and team activity.</p>
@@ -58,9 +67,12 @@ export default function Index({ workspaces }) {
                                 </span>
                                 <time>{new Date(workspace.created_at).toLocaleDateString()}</time>
                                 <div className="workspace-row-actions">
-                                    <a href={`/workspaces/${workspace.id}/edit`} className="workspace-action workspace-action--edit">
+                                    <Link
+                                        href={`/workspaces/${workspace.id}/edit`}
+                                        className="workspace-action workspace-action--edit"
+                                    >
                                         Edit
-                                    </a>
+                                    </Link>
                                     <button
                                         type="button"
                                         className="workspace-action workspace-action--delete"

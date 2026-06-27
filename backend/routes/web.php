@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Bots\BotController;
 use App\Http\Controllers\Workspace\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -23,6 +24,8 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     Route::resource('workspaces', WorkspaceController::class)->except(['show']);
+        Route::resource('bots', BotController::class);
+
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
