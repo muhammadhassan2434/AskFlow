@@ -1,0 +1,33 @@
+:root {
+    --askflow-ink: #172033;
+    --askflow-muted: #64748b;
+    --askflow-soft: #f4f7fb;
+    --askflow-panel: #ffffff;
+    --askflow-line: #dbe5ef;
+    --askflow-primary: #0f766e;
+    --askflow-primary-dark: #115e59;
+    --askflow-primary-soft: #ccfbf1;
+    --askflow-accent: #f59e0b;
+    --askflow-danger: #dc2626;
+    --askflow-success: #16a34a;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-sans);
+    color: var(--askflow-ink);
+    background: var(--askflow-soft);
+}
+
+a {
+    color: inherit;
+}
+
+button,
+input {
+    font: inherit;
+}
