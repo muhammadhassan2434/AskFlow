@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import ConfirmModal from '../ConfirmModal';
 
 export default function WebsiteSources({ data, setData }) {
     const [website, setWebsite] = useState({
         title: '',
         url: '',
     });
+    const [websiteToRemove, setWebsiteToRemove] = useState(null);
 
     const addWebsite = () => {
         if (!website.url.trim()) return;
@@ -25,11 +27,17 @@ export default function WebsiteSources({ data, setData }) {
         });
     };
 
-    const removeWebsite = (id) => {
+    const confirmRemoveWebsite = () => {
+        if (!websiteToRemove) {
+            return;
+        }
+
         setData(
             'websites',
-            data.websites.filter((item) => item.id !== id)
+            data.websites.filter((item) => item.id !== websiteToRemove.id)
         );
+
+        setWebsiteToRemove(null);
     };
 
     return (
@@ -98,7 +106,7 @@ export default function WebsiteSources({ data, setData }) {
                             <button
                                 type="button"
                                 className="workspace-action workspace-action--delete"
-                                onClick={() => removeWebsite(site.id)}
+                                onClick={() => setWebsiteToRemove(site)}
                             >
                                 Remove
                             </button>
@@ -109,6 +117,18 @@ export default function WebsiteSources({ data, setData }) {
                 </div>
             )}
 
+            <ConfirmModal
+                open={Boolean(websiteToRemove)}
+                title="Remove Website"
+                message={
+                    websiteToRemove
+                        ? `Remove "${websiteToRemove.title || websiteToRemove.url}" from the list?`
+                        : ''
+                }
+                confirmLabel="Remove"
+                onCancel={() => setWebsiteToRemove(null)}
+                onConfirm={confirmRemoveWebsite}
+            />
         </div>
     );
 }

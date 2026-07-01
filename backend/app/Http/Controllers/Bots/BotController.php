@@ -6,6 +6,7 @@ use App\Http\Controllers\BaseController;
 use App\Http\Requests\Bot\BotStoreRequest;
 use App\Http\Requests\Bot\BotUpdateRequest;
 use App\Models\Bot;
+use App\Models\BotSource;
 use App\Services\Bot\BotService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -105,6 +106,24 @@ class BotController extends BaseController
             route('bots.index'),
             'success',
             'Bot deleted successfully.'
+        );
+    }
+
+    public function destroySource(
+        Request $request,
+        Bot $bot,
+        BotSource $source
+    ): RedirectResponse {
+        $this->botService->deleteSource(
+            $request->user(),
+            $bot,
+            $source
+        );
+
+        return $this->redirectResponse(
+            route('bots.edit', $bot),
+            'success',
+            'Source removed successfully.'
         );
     }
 }

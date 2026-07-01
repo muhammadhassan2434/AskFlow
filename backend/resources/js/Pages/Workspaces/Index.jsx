@@ -1,19 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import DashboardLayout from '../../Layouts/DashboardLayout';
+import ConfirmModal from '../../Components/ConfirmModal';
 
 export default function Index({ workspaces }) {
-    const deleteWorkspace = (workspace) => {
-        if (
-            !window.confirm(
-                `Are you sure you want to delete "${workspace.name}"?`
-            )
-        ) {
+    const [workspaceToDelete, setWorkspaceToDelete] = useState(null);
+    const [deleting, setDeleting] = useState(false);
+
+    const confirmDeleteWorkspace = () => {
+        if (!workspaceToDelete) {
             return;
         }
 
-        router.delete(`/workspaces/${workspace.id}`, {
+        setDeleting(true);
+
+        router.delete(`/workspaces/${workspaceToDelete.id}`, {
             preserveScroll: true,
+            onSuccess: () => setWorkspaceToDelete(null),
+            onFinish: () => setDeleting(false),
         });
     };
 
@@ -76,7 +80,7 @@ export default function Index({ workspaces }) {
                                     <button
                                         type="button"
                                         className="workspace-action workspace-action--delete"
-                                        onClick={() => deleteWorkspace(workspace)}
+                                        onClick={() => setWorkspaceToDelete(workspace)}
                                     >
                                         Delete
                                     </button>
@@ -86,6 +90,24 @@ export default function Index({ workspaces }) {
                     </div>
                 )}
             </section>
+
+            <ConfirmModal
+                open={Boolean(workspaceToDelete)}
+                title="Delete Workspace"
+                message={
+                    workspaceToDelete
+                        ? `Delete "${workspaceToDelete.name}"? This cannot be undone.`
+                        : ''
+                }
+                confirmLabel="Delete"
+                processing={deleting}
+                onCancel={() => {
+                    if (!deleting) {
+                        setWorkspaceToDelete(null);
+                    }
+                }}
+                onConfirm={confirmDeleteWorkspace}
+            />
         </DashboardLayout>
     );
 }

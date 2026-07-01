@@ -24,7 +24,13 @@ Route::middleware('auth')->group(function () {
     })->name('dashboard');
 
     Route::resource('workspaces', WorkspaceController::class)->except(['show']);
-        Route::resource('bots', BotController::class);
+
+    Route::delete(
+        'bots/{bot}/sources/{source}',
+        [BotController::class, 'destroySource']
+    )->name('bots.sources.destroy');
+
+    Route::resource('bots', BotController::class)->except(['show']);
 
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

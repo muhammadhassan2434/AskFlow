@@ -1,15 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { router } from '@inertiajs/react';
 import DashboardLayout from '../../Layouts/DashboardLayout';
+import ConfirmModal from '../../Components/ConfirmModal';
 
 export default function Index({ bots }) {
+    const [botToDelete, setBotToDelete] = useState(null);
+    const [deleting, setDeleting] = useState(false);
 
-    const deleteBot = (bot) => {
-        if (!window.confirm(`Delete ${bot.name}?`)) {
+    const confirmDeleteBot = () => {
+        if (!botToDelete) {
             return;
         }
 
-        router.delete(`/bots/${bot.id}`);
+        setDeleting(true);
+
+        router.delete(`/bots/${botToDelete.id}`, {
+            onSuccess: () => setBotToDelete(null),
+            onFinish: () => setDeleting(false),
+        });
     };
 
     return (
@@ -100,7 +108,7 @@ export default function Index({ bots }) {
                                     <button
                                         type="button"
                                         className="workspace-action workspace-action--delete"
-                                        onClick={() => deleteBot(bot)}
+                                        onClick={() => setBotToDelete(bot)}
                                     >
                                         Delete
                                     </button>
@@ -113,6 +121,24 @@ export default function Index({ bots }) {
                     </div>
                 )}
             </section>
+
+            <ConfirmModal
+                open={Boolean(botToDelete)}
+                title="Delete Bot"
+                message={
+                    botToDelete
+                        ? `Delete "${botToDelete.name}" and all of its knowledge sources? This cannot be undone.`
+                        : ''
+                }
+                confirmLabel="Delete"
+                processing={deleting}
+                onCancel={() => {
+                    if (!deleting) {
+                        setBotToDelete(null);
+                    }
+                }}
+                onConfirm={confirmDeleteBot}
+            />
         </DashboardLayout>
     );
 }

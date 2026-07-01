@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Bot;
 
+use App\Models\Bot;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -25,6 +26,7 @@ class BotUpdateRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
+                Rule::unique('bots', 'name')->ignore($this->route('bot')),
             ],
 
             'description' => [
@@ -43,6 +45,7 @@ class BotUpdateRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
+                Rule::in([Bot::DEFAULT_MODEL]),
             ],
 
             'sources' => [
@@ -93,6 +96,8 @@ class BotUpdateRequest extends FormRequest
 
             'deleted_source_ids.*' => [
                 'integer',
+                Rule::exists('bot_sources', 'id')
+                    ->where('bot_id', $this->route('bot')->id),
             ],
         ];
     }
@@ -104,11 +109,13 @@ class BotUpdateRequest extends FormRequest
             'workspace_id.exists' => 'Selected workspace does not exist.',
 
             'name.required' => 'Bot name is required.',
+            'name.unique' => 'A bot with this name already exists.',
             'name.max' => 'Bot name cannot exceed 255 characters.',
 
             'description.max' => 'Description cannot exceed 1000 characters.',
 
             'model.required' => 'Model is required.',
+            'model.in' => 'Only the default GPT model is currently available.',
 
             'sources.*.type.required' => 'Source type is required.',
             'sources.*.type.in' => 'Invalid source type selected.',

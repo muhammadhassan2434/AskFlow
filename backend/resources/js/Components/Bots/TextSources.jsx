@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ConfirmModal from '../ConfirmModal';
 
 export default function TextSources({ data, setData }) {
 
@@ -6,6 +7,7 @@ export default function TextSources({ data, setData }) {
         title: '',
         content: '',
     });
+    const [textToRemove, setTextToRemove] = useState(null);
 
     const addText = () => {
 
@@ -27,12 +29,17 @@ export default function TextSources({ data, setData }) {
         });
     };
 
-    const removeText = (id) => {
+    const confirmRemoveText = () => {
+        if (!textToRemove) {
+            return;
+        }
 
         setData(
             'texts',
-            data.texts.filter((item) => item.id !== id)
+            data.texts.filter((item) => item.id !== textToRemove.id)
         );
+
+        setTextToRemove(null);
     };
 
     return (
@@ -113,7 +120,7 @@ export default function TextSources({ data, setData }) {
                             <button
                                 type="button"
                                 className="workspace-action workspace-action--delete"
-                                onClick={() => removeText(item.id)}
+                                onClick={() => setTextToRemove(item)}
                             >
                                 Remove
                             </button>
@@ -126,6 +133,18 @@ export default function TextSources({ data, setData }) {
 
             )}
 
+            <ConfirmModal
+                open={Boolean(textToRemove)}
+                title="Remove Text Source"
+                message={
+                    textToRemove
+                        ? `Remove "${textToRemove.title || 'Text Source'}" from the list?`
+                        : ''
+                }
+                confirmLabel="Remove"
+                onCancel={() => setTextToRemove(null)}
+                onConfirm={confirmRemoveText}
+            />
         </div>
     );
 }

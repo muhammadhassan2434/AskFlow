@@ -1,6 +1,7 @@
 import React from 'react';
 import { router } from '@inertiajs/react';
 import Sidebar from '../Components/Sidebar';
+import FlashToast from './toast';
 
 export default function DashboardLayout({ children, title, subtitle, actions = null }) {
     const handleLogout = () => {
@@ -9,6 +10,8 @@ export default function DashboardLayout({ children, title, subtitle, actions = n
 
     return (
         <main className="panel-shell">
+            <FlashToast />
+
             <Sidebar />
 
             <section className="panel-main">

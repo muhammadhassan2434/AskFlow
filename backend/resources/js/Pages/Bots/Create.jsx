@@ -1,14 +1,13 @@
 import React from "react";
 
 import { useForm } from "@inertiajs/react";
-import { router } from "@inertiajs/react";
 import { route } from "ziggy-js";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 
 import BotForm from "../../Components/Bots/BotForm";
 
 export default function Create({ workspaces }) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, transform } = useForm({
         workspace_id: "",
 
         name: "",
@@ -17,14 +16,14 @@ export default function Create({ workspaces }) {
 
         system_prompt: "",
 
+        model: "gpt-4o-mini",
+
         documents: [],
 
         websites: [],
 
         texts: [],
     });
-
-    console.log(data)
 
     const handleSubmit = (event) => {
     event.preventDefault();
@@ -34,6 +33,7 @@ export default function Create({ workspaces }) {
         name: data.name,
         description: data.description,
         system_prompt: data.system_prompt,
+        model: data.model,
         sources: [],
     };
 
@@ -60,8 +60,9 @@ export default function Create({ workspaces }) {
         });
     });
 
+    transform(() => payload);
+
     post(route("bots.store"), {
-        data: payload,
         forceFormData: true,
         preserveScroll: true,
     });
@@ -80,6 +81,7 @@ export default function Create({ workspaces }) {
                     processing={processing}
                     workspaces={workspaces}
                     submitLabel="Create Bot"
+                    processingLabel="Creating Bot..."
                 />
             </form>
         </DashboardLayout>

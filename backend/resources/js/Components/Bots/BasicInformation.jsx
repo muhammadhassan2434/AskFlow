@@ -172,6 +172,32 @@ Keep responses short and professional.`}
 
                 </div>
 
+                <div className="workspace-field workspace-field--wide">
+
+                    <label htmlFor="model">
+                        AI Model <span className="text-danger">*</span>
+                    </label>
+
+                    <input
+                        id="model"
+                        type="text"
+                        className="workspace-input"
+                        readOnly
+                        value="GPT"
+                    />
+
+                    <small className="workspace-help">
+                        GPT is currently the only available model.
+                    </small>
+
+                    {errors.model && (
+                        <p className="workspace-error">
+                            {errors.model}
+                        </p>
+                    )}
+
+                </div>
+
             </div>
 
         </section>

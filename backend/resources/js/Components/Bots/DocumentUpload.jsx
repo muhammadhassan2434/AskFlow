@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
+import ConfirmModal from '../ConfirmModal';
 
 const allowedExtensions = [
     'pdf',
@@ -12,6 +13,7 @@ export default function DocumentUpload({
     setData,
 }) {
     const inputRef = useRef(null);
+    const [fileToRemove, setFileToRemove] = useState(null);
 
     const addFiles = (files) => {
         const selectedFiles = Array.from(files);
@@ -67,15 +69,19 @@ export default function DocumentUpload({
         addFiles(event.dataTransfer.files);
     };
 
-    const removeFile = (id) => {
+    const confirmRemoveFile = () => {
+        if (!fileToRemove) {
+            return;
+        }
 
         setData(
             'documents',
             data.documents.filter(
-                (item) => item.id !== id
+                (item) => item.id !== fileToRemove.id
             )
         );
 
+        setFileToRemove(null);
     };
 
     const formatSize = (bytes) => {
@@ -191,9 +197,7 @@ export default function DocumentUpload({
                             <button
                                 type="button"
                                 className="workspace-action workspace-action--delete"
-                                onClick={() =>
-                                    removeFile(document.id)
-                                }
+                                onClick={() => setFileToRemove(document)}
                             >
                                 Remove
                             </button>
@@ -206,6 +210,18 @@ export default function DocumentUpload({
 
             )}
 
+            <ConfirmModal
+                open={Boolean(fileToRemove)}
+                title="Remove Document"
+                message={
+                    fileToRemove
+                        ? `Remove "${fileToRemove.file.name}" from the upload list?`
+                        : ''
+                }
+                confirmLabel="Remove"
+                onCancel={() => setFileToRemove(null)}
+                onConfirm={confirmRemoveFile}
+            />
         </div>
     );
 }

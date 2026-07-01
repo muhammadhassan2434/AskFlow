@@ -10,6 +10,7 @@ export default function BotForm({
     processing,
     workspaces,
     submitLabel,
+    processingLabel = 'Saving Bot...',
 }) {
     return (
         <>
@@ -43,7 +44,7 @@ export default function BotForm({
                         disabled={processing}
                     >
                         {processing
-                            ? 'Creating Bot...'
+                            ? processingLabel
                             : submitLabel}
                     </button>
 

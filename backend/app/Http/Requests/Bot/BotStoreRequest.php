@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Bot;
 
+use App\Models\Bot;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -26,7 +27,7 @@ class BotStoreRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                'unique:bots,name'
+                Rule::unique('bots', 'name'),
             ],
 
             'description' => [
@@ -45,6 +46,7 @@ class BotStoreRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
+                Rule::in([Bot::DEFAULT_MODEL]),
             ],
 
             'sources' => [
@@ -128,6 +130,9 @@ class BotStoreRequest extends FormRequest
             'name.required' =>
                 'Bot name is required.',
 
+            'name.unique' =>
+                'A bot with this name already exists.',
+
             'name.max' =>
                 'Bot name may not exceed 255 characters.',
 
@@ -139,6 +144,9 @@ class BotStoreRequest extends FormRequest
 
             'model.required' =>
                 'Model is required.',
+
+            'model.in' =>
+                'Only the default GPT model is currently available.',
 
             'sources.*.type.required' =>
                 'Source type is required.',

@@ -29,17 +29,15 @@ class BotService
     {
         $this->assertOwner($user, $bot);
 
-        return Bot::query()
-            ->with('sources')
-            ->findOrFail($bot->id);
+        return $bot->load('sources');
     }
 
     public function create(User $user, array $data): Bot
     {
-        $workspace = Workspace::query()
-            ->whereKey($data['workspace_id'])
-            ->where('owner_id', $user->id)
-            ->firstOrFail();
+        $workspace = $this->resolveOwnedWorkspace(
+            $user,
+            $data['workspace_id']
+        );
 
         $bot = DB::transaction(function () use ($workspace, $data) {
 
@@ -70,27 +68,23 @@ class BotService
     ): Bot {
 
         $this->assertOwner($user, $bot);
-        $newWorkspace = Workspace::query()
-            ->whereKey($data['workspace_id'])
-            ->where('owner_id', $user->id)
-            ->firstOrFail();
+        $newWorkspace = $this->resolveOwnedWorkspace(
+            $user,
+            $data['workspace_id']
+        );
 
         return DB::transaction(function () use (
             $bot,
             $newWorkspace,
             $data
         ) {
-            $bot->update([
-                'workspace_id' => $newWorkspace->id,
-                'name' => trim($data['name']),
-                'slug' => $this->uniqueSlug(
-                    $data['name'],
+            $bot->update(
+                $this->botAttributes(
+                    $newWorkspace,
+                    $data,
                     $bot
-                ),
-                'description' => $data['description'] ?? null,
-                'system_prompt' => $data['system_prompt'] ?? null,
-                'model' => $data['model'],
-            ]);
+                )
+            );
 
             $this->deleteSources(
                 $bot,
@@ -120,7 +114,36 @@ class BotService
     ): void {
         $this->assertOwner($user, $bot);
 
-        $bot->delete();
+        DB::transaction(function () use ($bot) {
+            $this->deleteSourceFiles(
+                $bot->sources()->get()
+            );
+
+            $bot->delete();
+
+            $this->deleteBotDirectory($bot);
+        });
+    }
+
+    public function deleteSource(
+        User $user,
+        Bot $bot,
+        BotSource $source
+    ): void {
+        $this->assertOwner($user, $bot);
+
+        abort_if(
+            $source->bot_id !== $bot->id,
+            404
+        );
+
+        DB::transaction(function () use ($source) {
+            $this->deleteSourceFiles(
+                new Collection([$source])
+            );
+
+            $source->delete();
+        });
     }
 
     public function workspaceOptions(
@@ -140,6 +163,8 @@ class BotService
         User $user,
         Bot $bot
     ): void {
+        $bot->loadMissing('workspace');
+
         abort_if(
             $bot->workspace->owner_id !== $user->id,
             403
@@ -150,7 +175,7 @@ class BotService
         string $name,
         ?Bot $bot = null
     ): string {
-        $baseSlug = Str::slug($name);
+        $baseSlug = Str::slug($name) ?: 'bot';
 
         $slug = $baseSlug;
 
@@ -181,30 +206,50 @@ class BotService
         array $data
     ): Bot {
 
-        return Bot::create([
-
-            'workspace_id' => $workspace->id,
-
-            'name' => trim($data['name']),
-
-            'slug' => $this->uniqueSlug(
-                $data['name']
-            ),
-
-            'description' => $data['description'] ?? null,
-
-            'system_prompt' => $data['system_prompt'] ?? null,
-
-            'model' => $data['model'],
-
-            'status' => 'draft',
-
-        ]);
+        return Bot::create(
+            $this->botAttributes(
+                $workspace,
+                $data
+            )
+        );
     }
+
+    private function resolveOwnedWorkspace(
+        User $user,
+        int|string $workspaceId
+    ): Workspace {
+        return Workspace::query()
+            ->whereKey($workspaceId)
+            ->where('owner_id', $user->id)
+            ->firstOrFail();
+    }
+
+    private function botAttributes(
+        Workspace $workspace,
+        array $data,
+        ?Bot $bot = null
+    ): array {
+        return [
+            'workspace_id' => $workspace->id,
+            'name' => trim($data['name']),
+            'slug' => $this->uniqueSlug(
+                $data['name'],
+                $bot
+            ),
+            'description' => $data['description'] ?? null,
+            'system_prompt' => $data['system_prompt'] ?? null,
+            'model' => Bot::DEFAULT_MODEL,
+            'status' => $bot?->status ?? 'draft',
+        ];
+    }
+
     protected function saveSources(
         Bot $bot,
         array $sources
     ): void {
+        if (empty($sources)) {
+            return;
+        }
 
         foreach ($sources as $source) {
 
@@ -229,12 +274,9 @@ class BotService
             };
         }
 
-        if (! empty($sources)) {
-
-            $bot->update([
-                'status' => 'processing',
-            ]);
-        }
+        $bot->update([
+            'status' => 'processing',
+        ]);
     }
 
     protected function saveDocument(
@@ -253,13 +295,6 @@ class BotService
 
         $safeName = Str::slug($originalName) ?: 'document';
 
-        $folderName = sprintf(
-            '%d-%s-%s',
-            $bot->id,
-            $bot->slug,
-            Str::ulid()
-        );
-
         $fileName = sprintf(
             '%d-%s-%s.%s',
             $bot->id,
@@ -269,7 +304,7 @@ class BotService
         );
 
         $path = $file->storeAs(
-            "bots/{$folderName}",
+            $this->documentDirectory($bot),
             $fileName,
             'public'
         );
@@ -384,16 +419,6 @@ class BotService
         ]);
     }
 
-    protected function dispatchProcessingJob(
-        Bot $bot
-    ): void {
-
-        // ProcessBotSourcesJob::dispatch(
-        //     $bot->id
-        // );
-
-    }
-
     protected function deleteSources(
         Bot $bot,
         array $sourceIds
@@ -407,13 +432,91 @@ class BotService
             ->whereIn('id', $sourceIds)
             ->get();
 
-        foreach ($sources as $source) {
+        $this->deleteSourceFiles($sources);
 
-            if ($source->file_path) {
-                Storage::disk('public')->delete($source->file_path);
+        $bot->sources()
+            ->whereIn('id', $sourceIds)
+            ->delete();
+    }
+
+    private function documentDirectory(Bot $bot): string
+    {
+        $existingPath = $bot->sources()
+            ->where('type', 'document')
+            ->whereNotNull('file_path')
+            ->value('file_path');
+
+        if ($existingPath) {
+            return dirname($existingPath);
+        }
+
+        return $this->botStorageDirectory($bot);
+    }
+
+    private function botStorageDirectory(Bot $bot): string
+    {
+        return sprintf(
+            'bots/%d-%s',
+            $bot->id,
+            $bot->slug
+        );
+    }
+
+    private function deleteSourceFiles(Collection $sources): void
+    {
+        $directories = collect();
+
+        foreach ($sources as $source) {
+            if (! $source->file_path) {
+                continue;
             }
 
-            $source->delete();
+            $disk = Storage::disk('public');
+
+            if ($disk->exists($source->file_path)) {
+                $disk->delete($source->file_path);
+            }
+
+            $directories->push(dirname($source->file_path));
+        }
+
+        $directories
+            ->unique()
+            ->each(fn (string $directory) => $this->deleteDirectoryIfEmpty($directory));
+    }
+
+    private function deleteDirectoryIfEmpty(string $directory): void
+    {
+        $disk = Storage::disk('public');
+
+        while (
+            $directory &&
+            $directory !== '.' &&
+            str_starts_with($directory, 'bots/')
+        ) {
+            if (
+                ! empty($disk->files($directory)) ||
+                ! empty($disk->directories($directory))
+            ) {
+                break;
+            }
+
+            $disk->deleteDirectory($directory);
+            $directory = dirname($directory);
+        }
+    }
+
+    private function deleteBotDirectory(Bot $bot): void
+    {
+        $disk = Storage::disk('public');
+
+        foreach ([
+            $this->botStorageDirectory($bot),
+            sprintf('bots/%d', $bot->id),
+        ] as $directory) {
+            if ($disk->exists($directory)) {
+                $disk->deleteDirectory($directory);
+            }
         }
     }
 }
