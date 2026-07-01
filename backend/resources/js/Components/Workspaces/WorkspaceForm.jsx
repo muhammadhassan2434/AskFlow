@@ -1,6 +1,25 @@
 import React from 'react';
+import toast from 'react-hot-toast';
 
-export default function WorkspaceForm({ data, setData, errors, processing, submitLabel }) {
+export default function WorkspaceForm({
+    data,
+    setData,
+    errors,
+    processing,
+    submitLabel,
+    botsCount = 0,
+}) {
+    const handleActiveChange = (event) => {
+        if (!event.target.checked && botsCount > 0) {
+            toast.error(
+                'This workspace is used by bots and cannot be set to inactive. Remove or reassign the bots first.'
+            );
+            return;
+        }
+
+        setData('is_active', event.target.checked);
+    };
+
     return (
         <div className="workspace-form-card">
             <div className="workspace-form-grid">
@@ -34,11 +53,16 @@ export default function WorkspaceForm({ data, setData, errors, processing, submi
                     <input
                         type="checkbox"
                         checked={data.is_active}
-                        onChange={(event) => setData('is_active', event.target.checked)}
+                        onChange={handleActiveChange}
+                        disabled={botsCount > 0}
                     />
                     <span>
                         <strong>Active workspace</strong>
-                        <small>Keep this workspace visible and usable.</small>
+                        <small>
+                            {botsCount > 0
+                                ? `This workspace is used by ${botsCount} bot(s) and must stay active.`
+                                : 'Keep this workspace visible and usable.'}
+                        </small>
                     </span>
                 </label>
                 {errors.is_active && <p className="workspace-error">{errors.is_active}</p>}

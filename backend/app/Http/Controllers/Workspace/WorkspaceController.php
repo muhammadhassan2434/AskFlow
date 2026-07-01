@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Workspace;
 
+use App\Exceptions\WorkspaceInUseException;
 use App\Http\Controllers\BaseController;
 use App\Http\Requests\Workspace\StoreWorkspaceRequest;
 use App\Http\Requests\Workspace\UpdateWorkspaceRequest;
@@ -13,7 +14,7 @@ use Inertia\Response;
 
 class WorkspaceController extends BaseController
 {
-        protected string $pageRoot = 'Workspaces';
+    protected string $pageRoot = 'Workspaces';
 
     public function __construct(private WorkspaceService $workspaceService)
     {
@@ -35,12 +36,18 @@ class WorkspaceController extends BaseController
     {
         $this->workspaceService->create($request->user(), $request->validated());
 
-        return redirect()->route('workspaces.index');
+        return $this->redirectResponse(
+            route('workspaces.index'),
+            'success',
+            'Workspace created successfully.'
+        );
     }
 
     public function edit(Request $request, Workspace $workspace): Response
     {
         abort_if($workspace->owner_id !== $request->user()->id, 403);
+
+        $workspace->loadCount('bots');
 
         return $this->page('Edit', [
             'workspace' => $workspace,
@@ -49,15 +56,45 @@ class WorkspaceController extends BaseController
 
     public function update(UpdateWorkspaceRequest $request, Workspace $workspace): RedirectResponse
     {
-        $this->workspaceService->update($request->user(), $workspace, $request->validated());
+        try {
+            $this->workspaceService->update(
+                $request->user(),
+                $workspace,
+                $request->validated()
+            );
+        } catch (WorkspaceInUseException $exception) {
+            return $this->redirectResponse(
+                route('workspaces.edit', $workspace),
+                'error',
+                $exception->getMessage()
+            );
+        }
 
-        return redirect()->route('workspaces.index');
+        return $this->redirectResponse(
+            route('workspaces.index'),
+            'success',
+            'Workspace updated successfully.'
+        );
     }
 
     public function destroy(Request $request, Workspace $workspace): RedirectResponse
     {
-        $this->workspaceService->delete($request->user(), $workspace);
+        abort_if($workspace->owner_id !== $request->user()->id, 403);
 
-        return redirect()->route('workspaces.index');
+        try {
+            $this->workspaceService->delete($request->user(), $workspace);
+        } catch (WorkspaceInUseException $exception) {
+            return $this->redirectResponse(
+                route('workspaces.index'),
+                'error',
+                $exception->getMessage()
+            );
+        }
+
+        return $this->redirectResponse(
+            route('workspaces.index'),
+            'success',
+            'Workspace deleted successfully.'
+        );
     }
 }

@@ -1,11 +1,23 @@
 import React, { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
+import toast from 'react-hot-toast';
 import DashboardLayout from '../../Layouts/DashboardLayout';
 import ConfirmModal from '../../Components/ConfirmModal';
 
 export default function Index({ workspaces }) {
     const [workspaceToDelete, setWorkspaceToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
+
+    const requestDeleteWorkspace = (workspace) => {
+        if (workspace.bots_count > 0) {
+            toast.error(
+                `Cannot delete "${workspace.name}" because it is used by ${workspace.bots_count} bot(s). Remove the bots first.`
+            );
+            return;
+        }
+
+        setWorkspaceToDelete(workspace);
+    };
 
     const confirmDeleteWorkspace = () => {
         if (!workspaceToDelete) {
@@ -54,6 +66,7 @@ export default function Index({ workspaces }) {
                             <span>Name</span>
                             <span>Description</span>
                             <span>Status</span>
+                            <span>Bots</span>
                             <span>Created</span>
                             <span>Actions</span>
                         </div>
@@ -69,6 +82,7 @@ export default function Index({ workspaces }) {
                                 <span className={workspace.is_active ? 'status-pill status-pill--open' : 'status-pill status-pill--pending'}>
                                     {workspace.is_active ? 'Active' : 'Inactive'}
                                 </span>
+                                <span>{workspace.bots_count ?? 0}</span>
                                 <time>{new Date(workspace.created_at).toLocaleDateString()}</time>
                                 <div className="workspace-row-actions">
                                     <Link
@@ -80,7 +94,7 @@ export default function Index({ workspaces }) {
                                     <button
                                         type="button"
                                         className="workspace-action workspace-action--delete"
-                                        onClick={() => setWorkspaceToDelete(workspace)}
+                                        onClick={() => requestDeleteWorkspace(workspace)}
                                     >
                                         Delete
                                     </button>

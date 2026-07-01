@@ -483,7 +483,7 @@
 .workspace-table__head,
 .workspace-table__row {
     display: grid;
-    grid-template-columns: minmax(160px, 0.95fr) minmax(220px, 1.4fr) 110px 130px 170px;
+    grid-template-columns: minmax(160px, 0.95fr) minmax(220px, 1.4fr) 110px 70px 130px 170px;
     align-items: center;
     gap: 1rem;
     padding: 1rem 1.2rem;

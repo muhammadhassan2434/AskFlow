@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Bot extends Model
 {
+    use HasFactory;
+
     public const DEFAULT_MODEL = 'gpt-4o-mini';
 
     protected $fillable = ['workspace_id', 'name', 'slug', 'description', 'system_prompt', 'model', 'status',];

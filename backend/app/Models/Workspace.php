@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Workspace extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'owner_id',
         'name',
@@ -21,5 +24,10 @@ class Workspace extends Model
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    public function bots()
+    {
+        return $this->hasMany(Bot::class);
     }
 }

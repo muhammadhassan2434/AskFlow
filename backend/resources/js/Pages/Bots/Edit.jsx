@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { router, useForm } from '@inertiajs/react';
 import { route } from 'ziggy-js';
 import DashboardLayout from '../../Layouts/DashboardLayout';
@@ -22,6 +22,10 @@ export default function Edit({ bot, workspaces }) {
     const [sourceToDelete, setSourceToDelete] = useState(null);
     const [deletingSource, setDeletingSource] = useState(false);
 
+    useEffect(() => {
+        setData('existing_sources', bot.sources || []);
+    }, [bot.sources]);
+
     const requestRemoveSource = (source) => {
         setSourceToDelete(source);
     };
@@ -31,19 +35,16 @@ export default function Edit({ bot, workspaces }) {
             return;
         }
 
+        const deletedId = sourceToDelete.id;
+
         setDeletingSource(true);
 
         router.delete(
-            route('bots.sources.destroy', [bot.id, sourceToDelete.id]),
+            route('bots.sources.destroy', [bot.id, deletedId]),
             {
                 preserveScroll: true,
+                preserveState: false,
                 onSuccess: () => {
-                    setData(
-                        'existing_sources',
-                        data.existing_sources.filter(
-                            (item) => item.id !== sourceToDelete.id
-                        )
-                    );
                     setSourceToDelete(null);
                 },
                 onFinish: () => setDeletingSource(false),

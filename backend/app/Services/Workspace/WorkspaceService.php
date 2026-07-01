@@ -2,6 +2,7 @@
 
 namespace App\Services\Workspace;
 
+use App\Exceptions\WorkspaceInUseException;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Database\Eloquent\Collection;
@@ -13,6 +14,7 @@ class WorkspaceService
     {
         return Workspace::query()
             ->where('owner_id', $user->id)
+            ->withCount('bots')
             ->latest()
             ->get();
     }
@@ -32,11 +34,19 @@ class WorkspaceService
     {
         $this->assertOwner($user, $workspace);
 
+        $isActive = array_key_exists('is_active', $data)
+            ? (bool) $data['is_active']
+            : $workspace->is_active;
+
+        if (! $isActive && $workspace->bots()->exists()) {
+            throw WorkspaceInUseException::cannotDeactivate();
+        }
+
         $workspace->update([
             'name' => $data['name'],
             'slug' => $this->uniqueSlug($data['name'], $workspace),
             'description' => $data['description'] ?? null,
-            'is_active' => $data['is_active'] ?? false,
+            'is_active' => $isActive,
         ]);
 
         return $workspace;
@@ -45,6 +55,10 @@ class WorkspaceService
     public function delete(User $user, Workspace $workspace): void
     {
         $this->assertOwner($user, $workspace);
+
+        if ($workspace->bots()->exists()) {
+            throw WorkspaceInUseException::cannotDelete();
+        }
 
         $workspace->delete();
     }

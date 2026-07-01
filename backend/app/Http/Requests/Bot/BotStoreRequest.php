@@ -112,6 +112,7 @@ class BotStoreRequest extends FormRequest
                 'required_if:sources.*.type,text',
                 'nullable',
                 'string',
+                'max:50000',
             ],
 
         ];

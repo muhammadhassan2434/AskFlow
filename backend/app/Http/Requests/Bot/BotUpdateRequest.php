@@ -87,17 +87,7 @@ class BotUpdateRequest extends FormRequest
                 'required_if:sources.*.type,text',
                 'nullable',
                 'string',
-            ],
-
-            'deleted_source_ids' => [
-                'nullable',
-                'array',
-            ],
-
-            'deleted_source_ids.*' => [
-                'integer',
-                Rule::exists('bot_sources', 'id')
-                    ->where('bot_id', $this->route('bot')->id),
+                'max:50000',
             ],
         ];
     }

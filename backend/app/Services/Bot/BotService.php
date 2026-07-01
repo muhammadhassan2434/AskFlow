@@ -86,11 +86,6 @@ class BotService
                 )
             );
 
-            $this->deleteSources(
-                $bot,
-                $data['deleted_source_ids'] ?? []
-            );
-
             $this->saveSources(
                 $bot,
                 $data['sources'] ?? []
@@ -115,13 +110,14 @@ class BotService
         $this->assertOwner($user, $bot);
 
         DB::transaction(function () use ($bot) {
-            $this->deleteSourceFiles(
-                $bot->sources()->get()
-            );
+            $sources = $bot->sources()->get();
+            $directories = $this->collectBotDirectories($bot, $sources);
+
+            $this->deleteSourceFiles($sources);
 
             $bot->delete();
 
-            $this->deleteBotDirectory($bot);
+            $this->deleteBotDirectories($directories);
         });
     }
 
@@ -151,6 +147,7 @@ class BotService
     ): Collection {
         return Workspace::query()
             ->where('owner_id', $user->id)
+            ->where('is_active', 1)
             ->select(
                 'id',
                 'name'
@@ -238,7 +235,7 @@ class BotService
             ),
             'description' => $data['description'] ?? null,
             'system_prompt' => $data['system_prompt'] ?? null,
-            'model' => Bot::DEFAULT_MODEL,
+            'model' => $data['model'] ?? $bot?->model ?? Bot::DEFAULT_MODEL,
             'status' => $bot?->status ?? 'draft',
         ];
     }
@@ -309,35 +306,47 @@ class BotService
             'public'
         );
 
-        BotSource::create([
+        if (! $path) {
+            throw new \RuntimeException(
+                'Failed to store the uploaded document.'
+            );
+        }
 
-            'bot_id' => $bot->id,
+        try {
+            BotSource::create([
 
-            'type' => 'document',
+                'bot_id' => $bot->id,
 
-            'title' => $originalName,
+                'type' => 'document',
 
-            'content' => null,
+                'title' => $originalName,
 
-            'url' => null,
+                'content' => null,
 
-            'file_name' => $file->getClientOriginalName(),
+                'url' => null,
 
-            'file_path' => $path,
+                'file_name' => $file->getClientOriginalName(),
 
-            'file_type' => $extension,
+                'file_path' => $path,
 
-            'file_size' => $file->getSize(),
+                'file_type' => $extension,
 
-            'status' => 'pending',
+                'file_size' => $file->getSize(),
 
-            'error_message' => null,
+                'status' => 'pending',
 
-            'meta' => null,
+                'error_message' => null,
 
-            'processed_at' => null,
+                'meta' => null,
 
-        ]);
+                'processed_at' => null,
+
+            ]);
+        } catch (\Throwable $exception) {
+            Storage::disk('public')->delete($path);
+
+            throw $exception;
+        }
     }
 
     protected function saveWebsite(
@@ -353,10 +362,10 @@ class BotService
 
             'title' => ! empty($source['title'])
                 ? trim($source['title'])
-                : parse_url(
+                : (parse_url(
                     $source['url'],
                     PHP_URL_HOST
-                ),
+                ) ?: 'Website'),
 
             'content' => null,
 
@@ -417,26 +426,6 @@ class BotService
             'processed_at' => null,
 
         ]);
-    }
-
-    protected function deleteSources(
-        Bot $bot,
-        array $sourceIds
-    ): void {
-
-        if (empty($sourceIds)) {
-            return;
-        }
-
-        $sources = $bot->sources()
-            ->whereIn('id', $sourceIds)
-            ->get();
-
-        $this->deleteSourceFiles($sources);
-
-        $bot->sources()
-            ->whereIn('id', $sourceIds)
-            ->delete();
     }
 
     private function documentDirectory(Bot $bot): string
@@ -506,14 +495,26 @@ class BotService
         }
     }
 
-    private function deleteBotDirectory(Bot $bot): void
+    private function collectBotDirectories(
+        Bot $bot,
+        Collection $sources
+    ): array {
+        return $sources
+            ->pluck('file_path')
+            ->filter()
+            ->map(fn (string $path) => dirname($path))
+            ->push($this->botStorageDirectory($bot))
+            ->push(sprintf('bots/%d', $bot->id))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function deleteBotDirectories(array $directories): void
     {
         $disk = Storage::disk('public');
 
-        foreach ([
-            $this->botStorageDirectory($bot),
-            sprintf('bots/%d', $bot->id),
-        ] as $directory) {
+        foreach ($directories as $directory) {
             if ($disk->exists($directory)) {
                 $disk->deleteDirectory($directory);
             }

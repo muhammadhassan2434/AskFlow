@@ -4,10 +4,8 @@ import { sidebarMenu } from '../Config/sidebarMenu';
 const menuMarks = {
     dashboard: 'D',
     workspaces: 'W',
-    questions: 'Q',
-    users: 'U',
-    reports: 'R',
-    settings: 'S',
+    bots: 'B',
+    
 };
 
 export default function Sidebar() {

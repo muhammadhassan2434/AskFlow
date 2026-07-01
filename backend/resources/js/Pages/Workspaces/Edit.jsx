@@ -24,6 +24,7 @@ export default function Edit({ workspace }) {
                     errors={errors}
                     processing={processing}
                     submitLabel="Update Workspace"
+                    botsCount={workspace.bots_count ?? 0}
                 />
             </form>
         </DashboardLayout>

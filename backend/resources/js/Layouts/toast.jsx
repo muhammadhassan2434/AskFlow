@@ -27,7 +27,7 @@ export default function FlashToast() {
 
     return (
         <Toaster
-            position="top-right"
+            position="bottom-right"
             toastOptions={{
                 duration: 3500,
             }}

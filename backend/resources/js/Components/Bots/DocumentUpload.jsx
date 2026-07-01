@@ -14,20 +14,26 @@ export default function DocumentUpload({
 }) {
     const inputRef = useRef(null);
     const [fileToRemove, setFileToRemove] = useState(null);
+    const [fileError, setFileError] = useState('');
 
     const addFiles = (files) => {
         const selectedFiles = Array.from(files);
 
+        if (selectedFiles.length === 0) {
+            return;
+        }
+
         const newFiles = [];
+        const rejected = [];
 
         selectedFiles.forEach((file) => {
-
-            const extension = file.name
-                .split('.')
-                .pop()
-                .toLowerCase();
+            const parts = file.name.split('.');
+            const extension = parts.length > 1
+                ? parts.pop().toLowerCase()
+                : '';
 
             if (!allowedExtensions.includes(extension)) {
+                rejected.push(file.name);
                 return;
             }
 
@@ -38,6 +44,7 @@ export default function DocumentUpload({
             );
 
             if (exists) {
+                rejected.push(`${file.name} (already added)`);
                 return;
             }
 
@@ -46,8 +53,15 @@ export default function DocumentUpload({
                 type: 'document',
                 file,
             });
-
         });
+
+        if (rejected.length > 0) {
+            setFileError(
+                `Could not add: ${rejected.join(', ')}. Only PDF, DOC, DOCX, and TXT files are allowed.`
+            );
+        } else {
+            setFileError('');
+        }
 
         if (newFiles.length === 0) {
             return;
@@ -160,6 +174,12 @@ export default function DocumentUpload({
                 </div>
 
             </div>
+
+            {fileError && (
+                <p className="workspace-error">
+                    {fileError}
+                </p>
+            )}
 
             {data.documents.length > 0 && (
 
