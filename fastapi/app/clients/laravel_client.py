@@ -1,6 +1,8 @@
 import httpx
 
 from app.core.config import settings
+from app.models.bot import Bot
+
 
 
 class LaravelClient:
@@ -11,7 +13,8 @@ class LaravelClient:
             "Accept": "application/json",
         }
 
-    def get_bot(self, bot_id: int) -> dict:
+    def get_bot(self, bot_id: int) -> Bot:
+
         response = httpx.get(
             f"{self.base_url}/api/ai/bots/{bot_id}",
             headers=self.headers,
@@ -20,4 +23,6 @@ class LaravelClient:
 
         response.raise_for_status()
 
-        return response.json()
+        data = response.json()
+
+        return Bot.model_validate(data["data"])
