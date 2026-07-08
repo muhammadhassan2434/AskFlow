@@ -1,6 +1,6 @@
 import re
 
-from app.models.extracted_source import ExtractedSource
+from app.models.normalized_text import NormalizedText
 from app.models.parser_result import ParserResult
 from app.normalizers.base_normalizer import BaseNormalizer
 
@@ -20,7 +20,7 @@ class TextNormalizer(BaseNormalizer):
     def normalize(
         self,
         parser_result: ParserResult,
-    ) -> ExtractedSource:
+    ) -> NormalizedText:
 
         text = parser_result.text
 
@@ -58,4 +58,7 @@ class TextNormalizer(BaseNormalizer):
 
         text = text.strip()
 
-        return text
+        return NormalizedText(
+            text=text,
+            metadata=parser_result.metadata,
+        )

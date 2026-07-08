@@ -65,19 +65,11 @@ class DocumentLoader(BaseLoader):
 
             self.validator.validate(download)
 
-            # ----------------------------
-            # Next Phase
-            # parser = self.parser_factory.make(download)
-            # parser_result = parser.parse(download)
-            # normalized = self.normalizer.normalize(parser_result)
-            # return normalized
-            # ----------------------------
-
             parser = self.parser_factory.make(download)
 
             parser_result = parser.parse(download)
 
-            normalized_text = self.normalizer.normalize(parser_result)
+            normalized = self.normalizer.normalize(parser_result)
 
             return ExtractedSource(
                 source_id=document.id,
@@ -85,8 +77,8 @@ class DocumentLoader(BaseLoader):
                 workspace_id=document.workspace_id,
                 source_type="document",
                 title=document.title,
-                text=normalized_text,
-                metadata=parser_result.metadata,
+                text=normalized.text,
+                metadata=normalized.metadata,
             )
 
         finally:

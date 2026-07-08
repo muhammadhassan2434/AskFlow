@@ -2,12 +2,13 @@ from app.clients.laravel_client import LaravelClient
 from app.schemas.bot import TrainBotRequest
 from app.models.bot import Bot
 from app.loaders.loader_factory import LoaderFactory
-
+from app.chunking.chunk_factory import ChunkFactory
 
 class BotTrainingService:
 
     def __init__(self):
         self.laravel = LaravelClient()
+        self.chunker = ChunkFactory.make()
 
     def train(self, payload: TrainBotRequest) -> None:
 
@@ -17,11 +18,17 @@ class BotTrainingService:
 
             loader = LoaderFactory.make(source)
 
-            print(
-                f"Using {loader.__class__.__name__}"
-            )
+            extracted = loader.load(bot, source)
 
-            loader.load(bot,source)
+            chunks = self.chunker.chunk(extracted)
+
+            print("=" * 80)
+            print(f"Source: {source.title}")
+            print(f"Chunks: {len(chunks)}")
+            print("=" * 80)
+
+            for chunk in chunks:
+                print(chunk.chunk_index, len(chunk.text))
 
     def fetch_bot(self, bot_id: int) -> Bot:
         """

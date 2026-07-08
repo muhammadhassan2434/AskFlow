@@ -45,5 +45,9 @@ class Settings(BaseSettings):
         "text/plain"
     )
 
+    CHUNK_SIZE: int = 1000
+
+    CHUNK_OVERLAP: int = 200
+
 
 settings = Settings()
